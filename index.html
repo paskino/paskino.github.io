@@ -54,6 +54,8 @@ $(document).ready(function(){
 					$(".repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
+					$(".repos").append("<input type=\"button\" id=\"fetch_branch\">Select</input>");
+					$("#fetch_branch").click(getBranches($(".repos").selected));
 				}
 			);
 			
@@ -71,6 +73,7 @@ var fillOptions = function(el) {
 } 
 
 var getBranches = function (repo) {
+	console.log("getBranches for " + repo);
 	repo.fetchBranches(function (err, res) {
     if(err) { throw "outch ..." }
 
