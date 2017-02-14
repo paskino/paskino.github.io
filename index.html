@@ -51,7 +51,7 @@ $(document).ready(function(){
 					// adds div for selector
 					$(".content_row").append("<div class=\"repos\"></div>");
 					//adds selector with repositorie
-					$(".repos").append("<select onchange=\"getBranches();\" id=\"repos_selector\"></select>");
+					$(".repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
 				}
