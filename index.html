@@ -50,12 +50,13 @@ $(document).ready(function(){
 					$(".repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
-					$(".repos").append("<input type=\"button\" id=\"fetch_branch\">Select</input>");
-					$("#fetch_branch").click(getBranches($(".repos").selected));
+					$(".repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
+					$("#fetch_branches").onclick(getBranches($(".repos").val()))
+										.setText("Get Branches");
 				}
 			);
 			
-			//repos = user_repos.getRepositories();
+			repos = user_repos.getRepositories();
 			
 			
 		}
@@ -68,13 +69,14 @@ var fillOptions = function(el) {
 		" value=\""+ el.name +"\">"+ el.name +"</option>");
 } 
 
-var getBranches = function (repo) {
-	console.log("getBranches for " + repo);
-	repo.fetchBranches(function (err, res) {
+var getBranches = function (reponame) {
+	var thisrepo = repos.getRepositoryByName(reponame);
+	console.log("getBranches for " + reponame);
+	thisrepo.fetchBranches(function (err, res) {
     if(err) { throw "outch ..." }
 
-    console.log("Array of branches : ", repo.getBranches());
-    repo.eachBranch(function (branch) {
+    console.log("Array of branches : ", thisrepo.getBranches());
+    thisrepo.eachBranch(function (branch) {
         console.log(branch.name);
     });
 
