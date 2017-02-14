@@ -51,7 +51,7 @@ $(document).ready(function(){
 					// fill selector
 					res.repositories.forEach(fillOptions)
 					$(".repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
-					$("#fetch_branches").onclick(getBranches($(".repos").val()))
+					$("#fetch_branches").click(getBranches($(".repos").val()))
 										.setText("Get Branches");
 				}
 			);
