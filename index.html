@@ -29,8 +29,8 @@ $(document).ready(function(){
 
 				//console.log("Blog : ", resUser.blog); // == k33g.blog
 				console.log("Name : ", resUser.name);
-				$("#content_row").append("<p>" + resUser.name + "</p>");
-				jQuery("#content_row").append("<p>"+resUser.repos+"</p>");
+				$(".content_row").append("<p>" + resUser.name + "</p>");
+				jQuery(".content_row").append("<p>"+resUser.repos+"</p>");
 				//etc. ...
 				}
 			);
@@ -45,7 +45,7 @@ $(document).ready(function(){
 					if(err) {
 						throw "outch ..."
 					}
-					console.log("Repositories", user_repos);
+					console.log("Repositories", res);
 				}
 			);
 		}
