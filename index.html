@@ -50,7 +50,7 @@ $(document).ready(function(){
 					$("#repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
-					$("#repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
+					$("#repos").append("<input type=\"button\" id=\"fetch_branches\" value=\"Select\"></input>");
 					$("#fetch_branches").click(getBranches);
 				}
 			);
@@ -69,8 +69,8 @@ var fillOptions = function(el) {
 } 
 
 var getBranches = function () {
-	var reponame = $("#fetch_branches").val();
-	if (reponame != undefined) {
+	var reponame = $("#repos_selector").val();
+	if (reponame != "") {
 		var i = 0;
 		while (repos[i].name != reponame ) i = i+1;
 		
@@ -80,19 +80,63 @@ var getBranches = function () {
 			if(err) { throw "outch ..." }
 
 			console.log("Array of branches : ", thisrepo.getBranches());
-			thisrepo.eachBranch(function (branch) {
-				console.log(branch.name);
-			});
+			thisrepo.eachBranch(getBranchContent);
 
 		}
 		)
 	}
 }
 
+var fileData = [];
 
+var getBranchContent = function (branch) {
+	branch.fetchContents(function (err, res) {
+            if(err) { throw "outch ..." }
+
+            branch.eachContent(function (content) {
+                console.log(content.path, content.type);
+				fileData.push(content);
+				if (content.type == 'file') {
+					content.fetchCommits(getFileCommits);
+				} else {
+					// traverse the directory
+					content.fetchContents(recursiveTraverseDirectory);
+				}
+			});
+        });
+}
+
+var fileCommits = [];
+var getFileCommits = function(err, file) {
+	if (err) {
+		alert ("Error fetching file commits");
+		throw "Error fetching file commits";
+	}
+	fileCommits.push(file.getCommits());
+	file.eachCommit(function (commit) {
+            console.log(commit.author.login, commit.message, commit.date);
+    });
+	
+	
+}
+
+var recursiveTraverseDirectory = function (err, res) {
+	if(err) { throw "outch ..." }
+
+	console.log(res.getContents());
+
+	res.eachContent(function (cont) {
+		console.log(cont.name, cont.type, cont.size);
+		if (cont.type == 'dir') cont.fetchContents(recursiveTraverseDirectory);
+		else if (cont.type == 'file') {
+			fileData.push(cont);
+			cont.fetchCommits(getFileCommits);			
+		}
+	});
+}
 </script>
 
-<body>
+<body style="background-color:gray;">
 <h1>Project Dashboard</h1>
 
 <div class="container">
