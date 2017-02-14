@@ -20,6 +20,17 @@ $(document).ready(function(){
 			alert("Please fill all fields...!!!!!!");
 		}else {
 			var user = new Gh3.User(email);
+			
+			user.fetch(function (err, resUser){
+
+				if(err) {
+					throw "outch ..."
+				}
+
+				//console.log("Blog : ", resUser.blog); // == k33g.blog
+				console.log("Name : ", resUser.name);
+				//etc. ...
+			);
 			//get some repositories of k33g
 			var user_repos = new Gh3.Repositories(user);
 			user_repos.fetch(
