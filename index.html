@@ -70,7 +70,10 @@ var fillOptions = function(el) {
 } 
 
 var getBranches = function (reponame) {
-	var thisrepo = repos.getRepositoryByName(reponame);
+	var i = 0;
+	while (repos[i].name != reponame ) i = i+1;
+	
+	var thisrepo = repos[i]);
 	console.log("getBranches for " + reponame);
 	thisrepo.fetchBranches(function (err, res) {
     if(err) { throw "outch ..." }
