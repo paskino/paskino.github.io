@@ -45,13 +45,13 @@ $(document).ready(function(){
 						throw "outch ..."
 					}
 					// adds div for selector
-					$(".content_row").append("<div class=\"repos\"></div>");
+					$("#content_row").append("<div id=\"repos\"></div>");
 					//adds selector with repositorie
-					$(".repos").append("<select id=\"repos_selector\"></select>");
+					$("#repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
-					$(".repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
-					$("#fetch_branches").click(getBranches($(".repos").val()))
+					$("#repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
+					$("#fetch_branches").click(getBranches($("#repos").val()))
 										.setText("Get Branches");
 				}
 			);
@@ -106,7 +106,7 @@ var getBranches = function (reponame) {
 </form>
 </div>
 </div>
-<div class="content_row">
+<div id="content_row">
 <div>
 </body>
 </html>
