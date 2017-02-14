@@ -29,6 +29,7 @@ $(document).ready(function(){
 
 				//console.log("Blog : ", resUser.blog); // == k33g.blog
 				console.log("Name : ", resUser.name);
+				jQuery("#content_row").append(<p>resUser.repos</p>);
 				//etc. ...
 				}
 			);
@@ -54,12 +55,12 @@ $(document).ready(function(){
 </script>
 
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+<h1>Project Dashboard</h1>
+
 <div class="container">
 <div class="main">
 <form class="form" method="post" action="#">
-<h2>Create Login Form Using jQuery</h2>
+
 <label>Github user :</label>
 <input type="text" name="demail" id="email">
 <label>Password :</label>
@@ -68,5 +69,7 @@ $(document).ready(function(){
 </form>
 </div>
 </div>
+<div class="content_row">
+<div>
 </body>
 </html>
