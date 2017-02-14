@@ -9,6 +9,9 @@
 <script src="./vendors/gh3.js"></script>    
 
 <script type="text/javascript">
+var user;
+var user_repos;
+var repos;
 $(document).ready(function(){
 	$("#login").click(function(){
 		var email = $("#email").val();
@@ -19,7 +22,7 @@ $(document).ready(function(){
 			$('input[type="text"],input[type="password"]').css("box-shadow","0 0 3px red");
 			alert("Please fill all fields...!!!!!!");
 		}else {
-			var user = new Gh3.User(email);
+			user = new Gh3.User(email);
 			
 			user.fetch(function (err, resUser){
 
@@ -35,7 +38,7 @@ $(document).ready(function(){
 				}
 			);
 			//get some repositories of k33g
-			var user_repos = new Gh3.Repositories(user);
+			user_repos = new Gh3.Repositories(user);
 			user_repos.fetch(
 				{	page:5, 
 					per_page:5, 
@@ -48,6 +51,9 @@ $(document).ready(function(){
 					console.log("Repositories", res);
 				}
 			);
+			
+			repos = user_repos.getRepositories();
+			
 		}
 	});
 });
