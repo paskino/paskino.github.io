@@ -51,7 +51,7 @@ $(document).ready(function(){
 					// fill selector
 					res.repositories.forEach(fillOptions)
 					$("#repos").append("<input type=\"button\" id=\"fetch_branches\">Select</input>");
-					$("#fetch_branches").click(getBranches($("#repos").val()))
+					$("#fetch_branches").click(getBranches))
 										.setText("Get Branches");
 				}
 			);
@@ -69,21 +69,23 @@ var fillOptions = function(el) {
 		" value=\""+ el.name +"\">"+ el.name +"</option>");
 } 
 
-var getBranches = function (reponame) {
-	var i = 0;
-	while (repos[i].name != reponame ) i = i+1;
-	
-	var thisrepo = repos[i];
-	console.log("getBranches for " + reponame);
-	thisrepo.fetchBranches(function (err, res) {
-    if(err) { throw "outch ..." }
+var getBranches = function () {
+	var reponame = $("#fetch_branches").val();
+	if (reponame != undefined) {
+		var i = 0;
+		while (repos[i].name != reponame ) i = i+1;
+		
+		var thisrepo = repos[i];
+		console.log("getBranches for " + reponame);
+		thisrepo.fetchBranches(function (err, res) {
+		if(err) { throw "outch ..." }
 
-    console.log("Array of branches : ", thisrepo.getBranches());
-    thisrepo.eachBranch(function (branch) {
-        console.log(branch.name);
-    });
+		console.log("Array of branches : ", thisrepo.getBranches());
+		thisrepo.eachBranch(function (branch) {
+			console.log(branch.name);
+		});
 
-   
+    }
 
 	})
 }
