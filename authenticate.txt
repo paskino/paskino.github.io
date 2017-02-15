@@ -1,0 +1,14 @@
+#Install virtualenv
+Follow instructions 
+http://www.tylerbutler.com/2012/05/how-to-install-python-pip-and-virtualenv-on-windows-with-powershell/
+
+#from PowerShell enable scripts for the current execution 
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Unrestricted
+
+cd c:\Python27\Scripts
+./pip install virtualenv
+./pip install virtualenvwrapper-powershell
+mkdir c:\users\ofn77899\.virtualenvs
+Import-Module virtualenvwrapper
+#Install Anaconda
+

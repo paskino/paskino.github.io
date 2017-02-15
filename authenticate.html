@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+</head>    
+<script src="./vendors/oauth.js"></script>
+<script src="./vendors/jquery-2.1.0.min.js"></script>
+<script src="./vendors/underscore-min.js"></script>
+<script src="./vendors/gh3.js"></script>    
+
+<script type="text/javascript">
+var user;
+var user_repos;
+var repos;
+var res ;
+var app;
+$(document).ready(function(){
+
+	// start OAuth			
+	OAuth.initialize('8sp8WnUF2qFoJL-60Ta3P2iKxu0');
+	// add button to main
+	$(".main").append("<input type=\"button\" id=\"authenticate\" value=\"Authenticate\"></input>");
+	$("#authenticate").click(startAuthenticateFlow);
+			
+
+//	$("#login").click(function(){
+//		var email = $("#email").val();
+//		var password = $("#password").val();
+//		// Checking for blank fields.
+//		if( email =='' || password ==''){
+//			$('input[type="text"],input[type="password"]').css("border","2px solid red");
+//			$('input[type="text"],input[type="password"]').css("box-shadow","0 0 3px red");
+//			alert("Please fill all fields...!!!!!!");
+//		}else {
+//			
+//		}
+//	}
+});
+
+var startAuthenticateFlow = function () {
+	OAuth.popup('github').done(function(result) {
+    console.log(result)
+    // do some stuff with result
+    app = result;
+	});
+}
+</script>
+
+<body style="background-color:gray;">
+<h1>Project Dashboard</h1>
+
+<div class="container">
+<div class="main">
+<!-- <form class="form" method="post" action="#">
+
+<label>Github user :</label>
+<input type="text" name="demail" id="email">
+<label>Password :</label>
+<input type="password" name="password" id="password">
+<input type="button" name="login" id="login" value="Login">
+</form> -->
+</div>
+</div>
+<div id="content_row">
+<div>
+</body>
+</html>

@@ -15,9 +15,9 @@ var repos;
 $(document).ready(function(){
 	$("#login").click(function(){
 		var email = $("#email").val();
-		var password = $("#password").val();
+		
 		// Checking for blank fields.
-		if( email =='' || password ==''){
+		if( email =='' ){
 			$('input[type="text"],input[type="password"]').css("border","2px solid red");
 			$('input[type="text"],input[type="password"]').css("box-shadow","0 0 3px red");
 			alert("Please fill all fields...!!!!!!");
@@ -27,6 +27,7 @@ $(document).ready(function(){
 			user.fetch(function (err, resUser){
 
 				if(err) {
+					console.log(err);
 					throw "outch ..."
 				}
 
@@ -50,8 +51,14 @@ $(document).ready(function(){
 					$("#repos").append("<select id=\"repos_selector\"></select>");
 					// fill selector
 					res.repositories.forEach(fillOptions)
-					$("#repos").append("<input type=\"button\" id=\"fetch_branches\" value=\"Select\"></input>");
-					$("#fetch_branches").click(getBranches);
+					
+					// this allows to go through a repository 
+					// all files and check the commits
+					//$("#repos").append("<input type=\"button\" id=\"fetch_branches\" value=\"Branches\"></input>");
+					//$("#fetch_branches").click(getBranches);
+					
+					$("#repos").append("<input type=\"button\" id=\"fetch_issues\" value=\"Issues\"></input>");
+					$("#fetch_issues").click(getIssues);
 				}
 			);
 			
@@ -109,7 +116,7 @@ var getBranchContent = function (branch) {
 var fileCommits = [];
 var getFileCommits = function(err, file) {
 	if (err) {
-		alert ("Error fetching file commits");
+		//alert ("Error fetching file commits");
 		throw "Error fetching file commits";
 	}
 	fileCommits.push(file.getCommits());
@@ -134,6 +141,83 @@ var recursiveTraverseDirectory = function (err, res) {
 		}
 	});
 }
+
+
+var getIssues = function () {
+	var reponame = $("#repos_selector").val();
+	var i = repos.findIndex(x => x.name == reponame) ;
+	if (i > -1) {
+		
+		//while (repos[i].name != reponame ) i = i+1;
+		
+		var thisrepo = repos[i];
+		console.log("getIssues for " + reponame);
+		thisrepo.fetchIssues(function (err, res) {
+			if(err) { throw "outch ..." }
+			mIssues = thisrepo.getIssues()
+			console.log("Found issues : ", mIssues.length);
+			$("#issue_row").append("<table id=\"myTable\"></table>");
+			$("#myTable").append("<tr><td>title</td><td>assigned to:</td><td>State</td><td>Created</td><td>Updated</td>");
+			//thisrepo.eachIssue(getIssueContent);
+			mIssues.forEach(getIssueContent);
+		}
+		)
+	}
+}
+
+var mIssues = [];
+var issueData = [];
+var getIssueContent = function (issue) {
+	console.log("Issue: "+issue.title);
+	console.log("Created: " + issue.created_at);
+	var row = "<tr><td>" + issue.title + "</td>";
+	row = row + "<td>" +issue.assignees.reduce((a,x)=> a + x.login + " ","") + 
+			"</td>";
+	// open? or closed
+	if (issue.state == "open"){
+
+		row = row +
+			"<td>" + (issue.state) + "</td><td>" + daysFromNow(issue.created_at) + "</td>";
+		row = row + 
+			"<td>" + daysFromNow(issue.updated_at) + "</td>";
+	}
+
+	$("#myTable").append(row+"</tr>");
+
+	/**
+	issue.fetchContents(function (err, res) {
+            if(err) { throw "outch ..." }
+
+            issue.eachContent(function (content) {
+                console.log(content);
+				issueData.push(content);
+				
+			});
+	
+        });
+        **/
+}
+
+var daysFromNow = function(iso8601str) {
+
+	var past = Date.parse(iso8601str);
+	var now = Date.now();
+	var diff = now-past;
+	var fDays = diff / (24 * 60 *60 *1000); // elapsed days float
+	var nDays = Math.floor(fDays);
+	var fHours = (fDays - nDays) * 24 ;
+	var nHours = Math.floor(fHours);
+	var fMins = (fHours - nHours) * 60;
+	var nMins = Math.floor(fMins);
+	var fSec = fMins - nMins;
+	
+	var rte = (nDays > 0? nDays + " days " : "") + 
+			  (nHours< 10 ? "0" : "") + nHours + ":" + 
+			  (nMins < 10 ? "0" : "" ) +  nMins;
+	console.log(rte);
+	return rte;
+
+}
 </script>
 
 <body style="background-color:gray;">
@@ -141,17 +225,18 @@ var recursiveTraverseDirectory = function (err, res) {
 
 <div class="container">
 <div class="main">
-<form class="form" method="post" action="#">
+<form class="form" >
 
 <label>Github user :</label>
 <input type="text" name="demail" id="email">
-<label>Password :</label>
-<input type="password" name="password" id="password">
+
 <input type="button" name="login" id="login" value="Login">
 </form>
 </div>
 </div>
-<div id="content_row">
-<div>
+
+<div id="content_row"></div>
+<div id="issue_row"></div>
+
 </body>
 </html>
