@@ -351,7 +351,6 @@
 
 	},{});
 
-
 	/*Gists*/
 
 	Gh3.GistComment = Kind.extend({
@@ -522,6 +521,47 @@
 			});
 		}
 	},{});
+	/**************************************/
+	Gh3.Release = Kind.extend({
+		constructor : function (releaseInfos, ghUser, repositoryName) {
+			this.author = releaseInfos.author.name;
+			this.date =	releaseInfos.created_at;
+			this.name = releaseInfos.name;
+			this.url = releaseInfos.url;
+			this.html_url = releaseInfos.html_url;
+			this.tag_name = releaseInfos.tag_name;
+
+			if (ghUser) this.user = ghUser;
+			if (repositoryName) this.repositoryName = repositoryName;
+		},
+		fetchComments : function (callback) {
+			var that = this;
+			that.comments = [];
+
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.repositoryName+"/commits/"+that.sha+"/comments",
+				success : function(res) {
+					_.each(res.data, function (comment) {
+						that.comments.push(new Gh3.CommitComment(comment));
+					});
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				},
+				beforeSend : function(xhr){
+					xhr.setRequestHeader('Accept','application/vnd.github.v3.full+json');
+				},
+			});
+		},
+		getComments : function () { return this.comments; },
+		eachComment : function (callback) {
+			_.each(this.comments, function (comment) {
+				callback(comment);
+			});
+		}
+	},{});
+	/**************************************/
 
 	Gh3.ItemContent = Kind.extend({
 		constructor : function (contentItem, ghUser, repositoryName, branchName) {
@@ -928,10 +968,51 @@
 
 			Gh3.Helper.callHttpApi({
 				service : "repos/"+that.user.login+"/"+that.name+"/pulls",
-				data : {sort: "updated"},
+				data : {sort: "updated" , state : "all"},
 				success : function(res) {
 					_.each(res.data, function (pull) {
 						that.pulls.push(new Gh3.Pull(pull.number, pull.user, that.name, pull));
+					});
+
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
+		
+		fetchCommits : function (callback) {
+			var that = this;
+			that.commits = [];
+
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.name+"/commits",
+				data : {sort: "updated"},
+				success : function(res) {
+					_.each(res.data, function (commit) {
+						that.commits.push(new Gh3.Commit(commit, that.name, that.repositoryName));
+					});
+
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
+		fetchReleases : function (callback) {
+			var that = this;
+			that.releases = [];
+
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.name+"/releases",
+				data : {sort: "updated"},
+				success : function(res) {
+					_.each(res.data, function (release) {
+						that.releases.push(new Gh3.Release(release, that.name, that.repositoryName));
 					});
 
 					if (callback) callback(null, that);
@@ -980,7 +1061,10 @@
 		},
 		reversePulls : function () {
 			this.pulls.reverse();
-		}
+		},
+		getCommits : function () {return this.commits;},
+		getReleases : function () {return this.releases;}
+		
 
 	},{});
 
