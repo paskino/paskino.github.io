@@ -32,12 +32,25 @@
 <script src="./vendors/jquery-2.1.0.min.js"></script>
 <script src="./vendors/underscore-min.js"></script>
 <script src="./vendors/gh3.js"></script>    
-
+<script type="text/javascript">
+var qs = (function(a) {
+  	    if (a == "") return {};
+  	    var b = {};
+  	    for (var i = 0; i < a.length; ++i)
+  	    {
+  	        var p=a[i].split('=');
+  	        if (p.length != 2) continue;
+  	        b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+  	    }
+  	    return b;
+  	})(window.location.search.substr(1).split('&'));
+</script>
 <script type="text/javascript">
 var user;
 var user_repos;
 var repos;
 $(document).ready(function(){
+
 	$("#login").click(function(){
 		var email = $("#email").val();
 		
@@ -47,7 +60,8 @@ $(document).ready(function(){
 			$('input[type="text"],input[type="password"]').css("box-shadow","0 0 3px red");
 			alert("Please fill all fields...!!!!!!");
 		}else {
-			user = new Gh3.User(email);
+			
+			user = new Gh3.User(email , {'Authorization' : 'token '+ qs['access_token'] });
 			
 			user.fetch(function (err, resUser){
 
@@ -61,9 +75,9 @@ $(document).ready(function(){
 			);
 			//get some repositories for user
 			user_repos = new Gh3.Repositories(user);
-			var pagination = {page: 1, per_page : 100 , direction : "desc"};
+			var pagination = {page: 1, per_page : 100 , direction : "desc", access_token : qs['access_token']};
 			
-			user_repos.fetch(
+			user_repos.fetchPrivate(
 				pagination,
 				"next", 
 				function (err, res) {
@@ -98,6 +112,9 @@ $(document).ready(function(){
 					$("#repos").append("<input type=\"button\" id=\"fetch_pulls\" value=\"Pulls\"></input>");
 					$("#fetch_pulls").click(getRepoPulls);
 					
+					// CREATE UI
+					$("#repos").append("<input type=\"button\" id=\"create_ui\" value=\"Create UI\"></input>");
+					$("#create_ui").click(createUI);
 					
 				}
 			);
@@ -194,13 +211,15 @@ var getIssues = function () {
 		console.log("getIssues for " + reponame);
 		thisrepo.fetchIssues(function (err, res) {
 			if(err) { throw "outch ..." }
-			mIssues = thisrepo.getIssues()
+			mIssues = thisrepo.getIssues();
+			
 			console.log("Found issues : ", mIssues.length);
+			
 			$("#issue_row").append("<table id=\"myTable\"></table>");
 			$("#myTable").append("<tr><td></td><td>title</td><td>assigned to:</td><td>Created</td><td>Updated</td>");
 			//thisrepo.eachIssue(getIssueContent);
 			mIssues.forEach(getIssueContent);
-		}
+		} , qs['access_token']
 		)
 	}
 	
@@ -241,17 +260,20 @@ var getRepoReleases = function() {
 			if(err) { throw "outch ..." }
 			repoReleases = thisrepo.getReleases();
 			console.log("Found " + repoReleases.length + " releases");
-			
-			//sort them in chrono order
-			repoReleases.sort((a,b) => -(Date.parse(a['date']) - Date.parse(b['date'])));
-			//display only the last release
-			var x = repoReleases[0];
-			$("#issue_row").append("<p><div class=\"colorbox "+getColor(Date.now() - Date.parse(x['date']) , 'release')+
-			"\"></div><a href=\""+ x['html_url'] + "\">"+ x['tag_name'] + "</a> was " + daysFromNow(x['date']) + " ago");
-			// display old releases
-			repoReleases.slice(1).forEach(x=>$("#issue_row").append("<p><div class=\"colorbox grey\"></div><a href=\""+ x['html_url'] + "\">"+ x['tag_name'] + "</a> was " + daysFromNow(x['date']) + " ago"));
-			
-		}
+			if ( repoReleases.length > 0 ) {
+				//sort them in chrono order
+				repoReleases.sort((a,b) => -(Date.parse(a['date']) - Date.parse(b['date'])));
+				//display only the last release
+				var x = repoReleases[0];
+				$("#release_row").append("<p><div class=\"colorbox "+getColor(Date.now() - Date.parse(x['date']) , 'release')+
+				"\"></div><a href=\""+ x['html_url'] + "\">"+ x['tag_name'] + "</a> was " + daysFromNow(x['date']) + " ago");
+				// display old releases
+				repoReleases.slice(1).forEach(x=>$("#issue_row").append("<p><div class=\"colorbox grey\"></div><a href=\""+ x['html_url'] + "\">"+ x['tag_name'] + "</a> was " + daysFromNow(x['date']) + " ago"));
+			} else {
+				$("#release_row").append("<p>No Release found!");
+			}
+		},
+		qs['access_token']
 		);
 	}
 }
@@ -319,7 +341,7 @@ var getRepoPulls = function() {
 			// display old releases
 			//repoReleases.slice(1).forEach(x=>$("#issue_row").append("<p><div class=\"colorbox grey\"></div><a href=\""+ x['html_url'] + "\">"+ x['tag_name'] + "</a> was " + daysFromNow(x['date']) + " ago"));
 			
-		}
+		} , qs['access_token']
 		);
 	}
 }
@@ -406,7 +428,7 @@ var GREY = "#CCCCCC";
 
 var getTrafficLight = function(lastmillis, type){
 	/** returns a color if a number is shorter than
-	if intended to return a color if number is larger than you must pass negative numbers and negative thresholds , see type pull 
+	if intended to return a color if number is larger than you must pass negative numbers and negative thresholds , see type pull) 
 	**/
 	
 	var THRESHOLD_LONG = NINETY_DAYS;
@@ -417,6 +439,7 @@ var getTrafficLight = function(lastmillis, type){
 	} else if (type == 'pull') {
 		THRESHOLD_LONG = -0.5;
 		THRESHOLD_SHORT = -0.1;
+		if (lastmillis == -200) lastmillis = 0;
 	}
 	
 	if ( lastmillis > THRESHOLD_LONG){
@@ -437,12 +460,189 @@ var getColor = function(lastmillis, type){
 	else if (colorstr == GREEN ) { return "green";  }
 	else if (colorstr == GREY  ) { return "grey";   }
 }
+
+var createUI = function(){
+	/*Adding a simple table with the visualization*/
+	$("#container").append("<table id=\"\mymetrics\"></table>");
+	$("#mymetrics").append("<tr><td>Repository</td><td>Addressed open issues</td><td>Addressed closed issues</td><td>Open Pull Requests merged</td><td>Pull Requests merged</td><td>Open Pull Requests merged 90 days</td><td>Pull Requests merged 90 days</td><td>Release</td></tr>");
+	
+	//repos.forEach(x=> { 
+	//		progress[x.name] = {pulls: false, issues: false, commits: true, releases: false};
+	//		fetchDataAndPaint(x);
+	//	} );
+	recursivePaint(0);
+	
+	
+}
+
+var recursivePaint = function(i){
+	if (i < repos.length) {
+		var x = repos[i];
+		progress[x.name] = {pulls: false, issues: false, commits: true, releases: false};
+		fetchDataAndPaint(x);
+	}
+}
+
+var progress = {};
+
+var fetchDataAndPaint = function (repository){
+	progress[repository.name] = {pulls: false, issues: false, commits: true, releases: false};
+			
+	$("#mymetrics").append("<tr id=\"row_"+repository.name+"\"><td>"+repository.name+"</td></tr>");
+	var i = repos.findIndex(x => x.name == repository.name) ;
+	if (i >= 0) {
+		console.log("Fetching data " +i+ " name " + repos[i].name);
+		// issues
+		repos[i].fetchIssues(function (err, res) {
+			if(err) { throw "outch ..." }
+			mIssues = repos[i].getIssues();
+			var myprogress = progress[repository.name];
+			myprogress.issues = true;
+			// get an array from the object
+			var mp = Object.keys(myprogress).map(function (key) { return myprogress[key]; });
+			if ( mp.reduce((a,b) => a&&b) ) {
+				console.log(repos[i].name + " fetch Issues launches paint");
+				// if all are true, we can plot
+				paintRepo(i);
+			}
+		} , qs['access_token']);
+		console.log("fetch Issues");
+		// pulls	
+		repos[i].fetchPulls(function (err, res) {
+			if(err) { throw "outch ..." }
+			repoPulls = repos[i].getPulls();
+			var myprogress = progress[repository.name];
+			myprogress.pulls = true;
+			// get an array from the object
+			var mp = Object.keys(myprogress).map(function (key) { return myprogress[key]; });
+			if ( mp.reduce((a,b) => a&&b) ) {
+				console.log(repos[i].name + " fetch Pulls launches paint");
+				// if all are true, we can plot
+				paintRepo(i);
+			}	
+		}, qs['access_token']);
+		console.log("fetch Pulls");
+		
+		// releases
+		repos[i].fetchReleases(function (err, res) {
+			if(err) { throw "outch ..." }
+			repoReleases = repos[i].getReleases();
+			//console.log("Found " + repoReleases.length + " releases for " + repos[i].name);
+			var myprogress = progress[repository.name];
+			myprogress.releases = true;
+			// get an array from the object
+			var mp = Object.keys(myprogress).map(function (key) { return myprogress[key]; });
+			if ( mp.reduce((a,b) => a&&b) ) {
+				// if all are true, we can plot
+				console.log(repos[i].name + " fetch Releases launches paint");
+		
+				paintRepo(i);
+			}	
+		}, qs['access_token']);
+		console.log("fetch Releases");
+		
+		
+	}
+}
+
+var paintRepo = function (i) {
+	// reset; prevents other threads to paint
+	//progress = {pulls: false, issues: false, commits: true, releases: false};
+	var thisrepo = repos[i];
+	$("#mymetrics").append("<tr id=\"#row_"+repos[i].name +"\"></tr>");
+	/*********************** issues ********************************/
+	var open = mIssues.filter(x=>x.state == 'open').length;
+	if (open > 0) {
+		var open = mIssues.filter(x=>x.state == 'open')
+					  .filter(x=>Date.now() - Date.parse(x.updated_at) < NINETY_DAYS).length;
+					  //console.log("OPEN length" + open);
+		open = 100 * open / mIssues.filter(x=>x.state == 'open').length;
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor(-open, 'pull') + "\">"+open+"%</div></td>");
+	} else { 
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A</div></td>"); 
+	}
+	//console.log("OPEN " + open);
+	
+	var close = mIssues.filter(x=>x.state == 'close');
+	if (close > 0) {
+		close = mIssues.filter(x=>x.state == 'close').filter(x=>Date.now() - Date.parse(x.updated_at) < NINETY_DAYS).length;
+		close = 100* (mIssues.filter(x=>x.state == 'close').length == 0 ? 0 : close / mIssues.filter(x=>x.state == 'close').length) ;
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor(-close, 'pull') + "\">"+close+"%</div></td>");
+	} else {
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A</div></td>");
+	}
+	
+	
+	/*********************** pulls ********************************/
+	
+	if (repoPulls.length > 0) {
+		// sort in chrono order
+		repoPulls.sort((a,b) => -(Date.parse(a['date']) - Date.parse(b['date'])));
+		
+		
+		// get the amount of OPEN pulls that are NOT merged
+		var onm = repoPulls.filter(x=> x.state == 'open' && x.merged_at == null);
+		// get the amount of OPEN pulls that are MERGED
+		var om = repoPulls.filter(x=> x.state == 'open' && x.merged_at != null);
+		
+		// get the amount of pulls that are NOT merged
+		var nm = repoPulls.filter(x=> x.merged_at == null);
+		// get the amount of pulls that are MERGED
+		var m = repoPulls.filter(x=> x.merged_at != null);
+		
+		// add some info to screen
+		var perc = (100 * om.length / (om.length + onm.length));
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + ( perc) + "%</div> </td>");
+		
+		perc = (100 * m.length / (nm.length + m.length));
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + (perc)+ " %</div></td>");
+		
+		// filter the pulls in the last 3 months
+		//$("#issue_row").append("<p> In the last 3 months:");
+			
+		if (repoPulls.filter(x=>(Date.now() - Date.parse(x.created_at)) < NINETY_DAYS).length > 0){
+			var t_onm = onm.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+			var t_om = om.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+			
+			var t_nm = nm.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+			var t_m = m.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+			
+			perc = (100 * t_om.length / (t_om.length + t_onm.length));
+			$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + ( perc) + "%</div></td>");
+		
+			perc = (100 * t_m.length / (t_nm.length + t_m.length));
+			$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + (perc)+ "%</div></td>");
+		
+		} else {
+			$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+			$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		}
+	} else {
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");	
+	}
+
+	/*********************** releases ********************************/
+	if ( repoReleases.length > 0 ) {
+		//sort them in chrono order
+		repoReleases.sort((a,b) => -(Date.parse(a['date']) - Date.parse(b['date'])));
+		//display number of releases in the last 3 months
+		var x = repoReleases.filter(x=> Date.now() - Date.parse(x.date) < NINETY_DAYS).length;
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox " + (x > 1 ? "green" : "red") + "\"></div>"+x+"</td>");
+	} else {
+		$("#row_"+repos[i].name).append("<td><div class=\"colorbox grey\"></div>N/A</td>");
+	}
+
+	// recursive call
+	recursivePaint(i+1);
+} 
 </script>
 
 <body style="background-color:gray;">
 <h1>Project Dashboard</h1>
 
-<div class="container">
 <div class="main">
 <form class="form" >
 
@@ -452,8 +652,8 @@ var getColor = function(lastmillis, type){
 <input type="button" name="login" id="login" value="Login">
 </form>
 </div>
-</div>
-
+<div id="container"></div>
+<div id="release_row"><div>
 <div id="content_row"></div>
 <div id="issue_row"></div>
 
