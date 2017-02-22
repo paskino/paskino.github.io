@@ -259,7 +259,6 @@
 				//delete apiParams.service;
 				apiParams.dataType = 'jsonp';
 			}
-
 			$.ajax(apiParams);
 		}
 	});
@@ -332,8 +331,7 @@
 		},
 		fetch : function (callback) {
 			var that = this;
-
-			Gh3.Helper.callHttpApi({
+			var apiPars = {
 				service : "users/"+that.login,
 				success : function (res) {
 					for(var prop in res.data) {
@@ -344,7 +342,13 @@
 				error : function (res) {
 					if (callback) callback(new Error(res.responseJSON.message),res);
 				}
-			});
+			}
+			if (that.hasOwnProperty("Authorization")) { 
+				apiPars['headers'] = {"Authorization" : that.Authorization};
+				console.log("headers present");
+				console.log(apiPars.headers);
+			} else {console.log("no headers present");}
+			Gh3.Helper.callHttpApi(apiPars);
 
 		}
 
@@ -922,13 +926,13 @@
 			});
 
 		},
-		fetchIssues : function (callback) {
+		fetchIssues : function (callback , token) {
 			var that = this;
 			that.issues = [];
 
 			Gh3.Helper.callHttpApi({
 				service : "repos/"+that.user.login+"/"+that.name+"/issues",
-				data : {sort: "updated"},
+				data : {sort: "updated", state: "all" , access_token : token  },
 				success : function(res) {
 					_.each(res.data, function (issue) {
 						that.issues.push(new Gh3.Issue(issue.number, issue.user, that.name, issue));
@@ -962,13 +966,13 @@
 			});
 
 		},
-		fetchPulls : function (callback) {
+		fetchPulls : function (callback, token) {
 			var that = this;
 			that.pulls = [];
 
 			Gh3.Helper.callHttpApi({
 				service : "repos/"+that.user.login+"/"+that.name+"/pulls",
-				data : {sort: "updated" , state : "all"},
+				data : {sort: "updated" , state : "all", access_token: token},
 				success : function(res) {
 					_.each(res.data, function (pull) {
 						that.pulls.push(new Gh3.Pull(pull.number, pull.user, that.name, pull));
@@ -1003,7 +1007,27 @@
 			});
 
 		},
-		fetchReleases : function (callback) {
+		fetchReleases : function (callback, token) {
+			var that = this;
+			that.releases = [];
+			
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.name+"/releases",
+				data : {sort: "updated" , access_token : token},
+				success : function(res) {
+					_.each(res.data, function (release) {
+						that.releases.push(new Gh3.Release(release, that.name, that.repositoryName));
+					});
+
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
+		fetchPrivateReleases : function (callback) {
 			var that = this;
 			that.releases = [];
 
@@ -1098,6 +1122,28 @@
 			});
 
 		},
+		//List user repositories
+		fetchPrivate : function (pagesInfoAndParameters, paginationInfo, callback) {
+			var that = this;
+			that.repositories = [];
+
+			Gh3.Helper.callHttpApi({
+				service : "user/repos",
+				data : pagesInfoAndParameters,
+				//beforeSend: function (xhr) { xhr.setRequestHeader ("rel", paginationInfo); }, --> why ? (pagination)
+				success : function(res) {
+					_.each(res.data, function (repository) {
+						that.repositories.push(new Gh3.Repository(repository.name, that.user));
+					});
+
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
 		reverseRepositories : function () {
 			this.repositories.reverse();
 		},
@@ -1134,7 +1180,7 @@
 				data : pagesInfo,
 				//beforeSend: function (xhr) { xhr.setRequestHeader ("rel", paginationInfo); },
 				success : function(res) {
-					//console.log("*** : ", res);
+					
 					_.each(res.data.repositories, function (repository) {
 						Gh3.Repositories.repositories.push(new Gh3.Repository(repository.name, new Gh3.User(repository.owner), repository));
 						//owner & login : same thing ???
