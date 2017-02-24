@@ -86,21 +86,21 @@ var getPublicRepositories = function ( ) {
 	user = $("#email").val();
 	json = []
 	$(".form").append("<select id=\"repos_selector\"></select>");
-	var pars = {'user' : user};
-	fetchData('repositories' , pars, 1 , storeRepos);
+	var pars = {'user' : user , 'what_to_get' : 'repositories'  };
+	fetchData( pars, 1 , storeRepos);
 }
-var storeRepos= function () {
+var storeRepos= function (data) {
 	//console.log("say something");
 	// fill spinner and store to global variable;
 	mRepos = [];
-	json.forEach(x=> {fillOptions(x); mRepos.push(x);});
+	data.forEach(x=> {fillOptions(x); mRepos.push(x);});
 	
 	// add button to query Issues For repo
 	$(".form").append("<input type=\"button\" id=\"fetch_issues\" value=\"Issues\"></input>");
 	$("#fetch_issues").click(function (){ 
 		getIssuesForRepo(
 			$('#repos_selector').val(), 
-			function(){{mIssues = [];  json.forEach(x=> mIssues.push(x)); } }
+			function(data){{mIssues = [];  data.forEach(x=> mIssues.push(x)); } }
 			);
 	});
 	// add button to query Pulls For repo
@@ -108,7 +108,7 @@ var storeRepos= function () {
 	$("#fetch_pulls").click(function (){ 
 		getPullsForRepo(
 			$('#repos_selector').val(),
-			function(){{mPulls = [];  json.forEach(x=> mPulls.push(x)); } }
+			function(data){{mPulls = [];  data.forEach(x=> mPulls.push(x)); } }
 			);
 	});
 	// add button to query COMMITS For repo
@@ -116,7 +116,7 @@ var storeRepos= function () {
 	$("#fetch_commits").click(function (){ 
 		getCommitsForRepo(
 			$('#repos_selector').val(),
-			function(){{mCommits = [];  json.forEach(x=> mCommits.push(x)); } }
+			function(data){{mCommits = [];  data.forEach(x=> mCommits.push(x)); } }
 			);
 	});
 	// add button to query RELEASES For repo
@@ -124,7 +124,7 @@ var storeRepos= function () {
 	$("#fetch_releases").click(function (){ 
 		getReleasesForRepo(
 			$('#repos_selector').val(),
-			function(){{mReleases = [];  json.forEach(x=> mReleases.push(x)); } }
+			function(data){{mReleases = [];  data.forEach(x=> mReleases.push(x)); } }
 			);
 	});
 }
@@ -136,9 +136,10 @@ var storeRepos= function () {
 var getPrivateRepositories = function () {
 	user = $("#email").val();
 	json = [];
-	var pars = {'user' : user, 'access_token' :token};
+	var pars = {'what_to_get' : 'private_repositories' , 'user' : user, 'access_token' :token};
 	$(".form").append("<select id=\"repos_selector\"></select>");
-	fetchData('private_repositories' , pars, 1 , storeRepos);
+	
+	fetchData( pars, 1 , storeRepos);
 }
 
 
@@ -165,8 +166,8 @@ var getIssuesForRepo = function (repo_name, callback) {
 	//sort	    string	What to sort results by. Can be either created, updated, comments. Default: created
 	//direction	string	The direction of the sort. Can be either asc or desc. Default: desc
 	//since	    string	Only issues updated at or after this time are returned. This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ.
-	var pars = {'user' : user, 'repo_name' : repo_name , 'state' : 'all' , 'access_token' :token};
-	fetchData('issues' , pars, 1 , callback );
+	var pars = {'what_to_get': 'issues','user' : user, 'repo_name' : repo_name , 'state' : 'all' , 'access_token' :token};
+	fetchData(pars, 1 , callback );
 }
 /******************************************/
 /*************** PULLS ********************/
@@ -180,10 +181,9 @@ var getPullsForRepo = function (repo_name, callback) {
 	base	    string	Filter pulls by base branch name. Example: gh-pages.
 	sort	    string	What to sort results by. Can be either created, updated, popularity (comment count) or long-running (age, filtering by pulls updated in the last month). Default: created
 	direction	string	The direction of the sort. Can be either asc or desc. Default: desc when sort is created or sort is not specified, otherwise asc.
-	//YYYY-MM-DDTHH:MM:SSZ
 	**/
-	var pars = {'user' : user, 'repo_name' : repo_name , 'state' : 'all' , 'access_token' :token};
-	fetchData('pulls' , pars, 1 , callback);
+	var pars = {'what_to_get': 'pulls','user' : user, 'repo_name' : repo_name , 'state' : 'all' , 'access_token' :token};
+	fetchData( pars, 1 , callback);
 }
 
 /*************** COMMITS ********************/
@@ -199,9 +199,9 @@ var getCommitsForRepo = function (repo_name, callback) {
 	**/
 	// limit to ONE_YEAR
 	var last_ninetydays = Date.now() - NINETY_DAYS;
-	
-	var pars = {'user' : user, 'repo_name' : repo_name , 'access_token' :token , 'since' : new Date(last_ninetydays).toISOString()};
-	fetchData('commits' , pars, 1 , callback);
+	console.log(new Date(last_ninetydays).toISOString());
+	var pars = {'what_to_get': 'commits','user' : user, 'repo_name' : repo_name , 'access_token' :token , 'since' : new Date(last_ninetydays).toISOString()};
+	fetchData(pars, 1 , callback);
 }
 
 /******************************************/
@@ -217,19 +217,32 @@ var getReleasesForRepo = function (repo_name, callback) {
 	since	string	Only commits after this date will be returned. This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ.
 	until	string	Only commits before this date will be returned. This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ.
 	**/
-	var pars = {'user' : user, 'repo_name' : repo_name , 'access_token' :token};
-	fetchData('releases' , pars, 1 , callback);
+	var pars = {'what_to_get': 'releases', 'user' : user, 'repo_name' : repo_name , 'access_token' :token};
+	fetchData(pars, 1 , callback);
 }
 
 /******************************************/
-var fetchData = function (what , pars, page, callback){
+/**
+fetchData: 	performs an asynchronous AJAX call to a REST api. 
+			It possibly makes recursive calls to the API when data are paginated. GitHub paginates with 30 result per page.
+			
+			pars: 	dict object containing the parameters for the query that are passed to the function getApiUrl
+				pars contains the access_token for authenticated use of the API. This should be moved to getApiUrl.
+			page:   int  used with paginated data. This is a hack. Github returns data paginated with 30 results per page. Data about paging is
+						 given in the header of the HTTP response. We do not get it here with a AJAX call. 
+			callback: function  what to do when the data has come back? The array of objects are passed to a function (data)
+			localresult: array  used with paginated data (still a hack)
+
+**/
+var fetchData = function (pars, page, callback, localresults){
 	
 	if (page == undefined) {
 		page = 1;
 	}
 	
+	
 	var ajaxPars = {
-		url: getApiUrl(what, pars),
+		url: getApiUrl(pars),
 		type : "GET",
 		data : {access_token : token, 'page' : page},
 		beforeSend: function(jqXHR, settings ) { 
@@ -239,65 +252,80 @@ var fetchData = function (what , pars, page, callback){
 		complete: function( jqXHR, textStatus ){
 			
 		} , 
+		error: function(){
+			if (callback) callback.call(this, []);
+		}, 
 		fail: function(err) { alert (err); },
 		success: function (data, textStatus, jqXHR) {
 			//json = data;
 			console.log("success");
+			if (data.constructor === Array){
 			if (data.length == 30) {
-				// suspicious => paginated data
-				// check if we have to do a recursive call
+				// if the returned data are exactly 30: suspicious => may be paginated data
+				// check if we have to do a recursive call: if we have already got the results we don't proceed.
 				var allpresent = false;
-				if (json == undefined ) {
-					json = data;
+				if (localresults == undefined ) {
+					localresults = data;
 				}
-				else if (json.length == 0) {
-					data.forEach(x=> json.push(x));
+				else if (localresults.length == 0) {
+					data.forEach(x=> localresults.push(x));
 				} else {
+					// use a temporary array to store data while iterating through the localresults array before adding them to localresults
 					var loc = [];
-					data.forEach(x=> {if (json.findIndex(y => y == x) == -1) { loc.push(x) ; console.log("new data");} else {console.log("already found");}});
-					if (loc.length > 0) {loc.forEach(x=>json.push(x));}
+					data.forEach(x=> { if (localresults.findIndex(y => y == x) == -1) { loc.push(x) ; } 
+									   else {/*console.log("already found");*/}
+									 });
+					if (loc.length > 0) {loc.forEach(x=>localresults.push(x));}
 					else {allpresent = true;}
-					console.log("added " +loc.length + " records")
+					//console.log("added " +loc.length + " records")
 					
 				}
 				// try with next page
-				console.log("try next page " + (page +1));
-				if (!allpresent) fetchData(what , pars, page+1, callback);
+				//console.log("try next page " + (page +1));
+				if (!allpresent) fetchData(pars, page+1, callback, localresults);
 				else {
-					if (callback) callback.call (this);
+					if (callback) callback.call (this , localresults);
 				}
 				
 			} else {
 				// get the data
-				if (json == undefined ) {
-					json = data;
-				}
-				else if (json.length == 0) {
-					data.forEach(x=> json.push(x));
-				} else {
-					var loc = [];
-					data.forEach(x=> {if (json.findIndex(y => y == x) == -1) { loc.push(x) ; console.log("new data");} else {console.log("already found");}});
-					if (loc.length > 0) {loc.forEach(x=>json.push(x));}
-					console.log("added " +loc.length + " records")
-				}
-				if (callback) callback.call (this);
+				
+				if (callback) callback.call (this, data);
 			}
 			
+			} else { 
+				// return empty data
+				if (callback) callback.call(this, []);
+			}
 			
-			//console.log(data);
 			$( "#progressbar" ).hide();
 		} ,
 		
 	};
 	
-	console.log(ajaxPars);
+	//console.log(ajaxPars);
 	
 	$.ajax(ajaxPars);
 
 }
 
+/**
+getApiUrl: 	returns the URL to perform the query to the REST API. 
+			//TODO should be made as a class able to return more than just the URL. 
+			// i.e. getApiUrl() , getMethod() -> GET/POST etc
+			
+			Currently made for GitHub API, it is extensible easily to other API's.
+			
+			pars: 	dict object containing the parameters to build the query URL. It MUST contain:
+				what_to_get:   string  defines what you want to get from the API
+				It MAY contain:
+				user:          string  a user (for Github is the owner of the repository)
+				repo_name:     string  the name of the repository
+				
 
-var getApiUrl =  function(what_to_get, pars){
+**/
+var getApiUrl =  function(pars){
+		var what_to_get = pars.what_to_get;
 		var base_url = "https://api.github.com/";
 		var gotourl ; 
 		switch(what_to_get){
@@ -413,8 +441,8 @@ var getColor = function(lastmillis, type){
 /******************** PAINT *************************************/
 var createUI = function(){
 	/*Adding a simple table with the visualization*/
-	$("#container").append("<table id=\"\mymetrics\"></table>");
-	$("#mymetrics").append("<tr><td>Repository</td><td>Addressed open issues</td><td>Addressed closed issues</td><td>Open Pull Requests merged</td><td>Pull Requests merged</td><td>Open Pull Requests merged 90 days</td><td>Pull Requests merged 90 days</td><td>Release</td></tr>");
+	$("#container").append("<table id=\"\mymetrics\" border=\"1px\"></table>");
+	$("#mymetrics").append("<tr><td>Repository</td><td>Addressed issues 90 days</td><!-- <td>Open Pull Requests merged</td><td>Pull Requests merged</td>--><td>Pull Requests merged</td> <td>Pull Requests merged 90 days</td><td>Release</td><td>Commits in 90days</td><td>Contributors</td></tr>");
 	
 	//repos.forEach(x=> { 
 	//		progress[x.name] = {pulls: false, issues: false, commits: true, releases: false};
@@ -429,12 +457,12 @@ var createUI = function(){
 var recursivePaint = function(i){
 	if (i < mRepos.length) {
 		var x = mRepos[i];
-		progress = {pulls: false, issues: false, commits: true, releases: false};
+		progress = {pulls: false, issues: false, commits: false, releases: false};
 		fetchDataAndPaint(x);
 	}
 }
 
-var progress = {pulls: false, issues: false, commits: true, releases: false};
+var progress = {pulls: false, issues: false, commits: false, releases: false};
 
 var fetchDataAndPaint = function (repository){
 	//progress[repository.name] = {pulls: false, issues: false, commits: true, releases: false};
@@ -442,14 +470,14 @@ var fetchDataAndPaint = function (repository){
 	
 	$("#mymetrics").append("<tr id=\"row_"+repository.name+"\"><td>"+repository.name+"</td></tr>");
 	var i = mRepos.findIndex(x => x.name == repository.name) ;
-	if (i >= 0) {
+	if (i >= 0 && repository.name != 'test') {
 		console.log("Fetching data " +i+ " name " + mRepos[i].name);
 		// issues
 		getIssuesForRepo(mRepos[i].name , 
-						function(){
+						function(data){
 							console.log(progress);
 							mIssues = [];  // store the issues in an array
-							json.forEach(x=> mIssues.push(x)); 
+							data.forEach(x=> mIssues.push(x)); 
 							// plot only whe all data is fetched
 							//var myprogress = progress[repository.name];
 							progress.issues = true;
@@ -464,9 +492,9 @@ var fetchDataAndPaint = function (repository){
 						);
 		// pulls	
 		getPullsForRepo(mRepos[i].name , 
-						function(){
+						function(data){
 							mPulls = [];  // store the issues in an array
-							json.forEach(x=> mPulls.push(x)); 
+							data.forEach(x=> mPulls.push(x)); 
 							// plot only whe all data is fetched
 							var myprogress = progress[repository.name];
 							progress.pulls = true;
@@ -482,9 +510,9 @@ var fetchDataAndPaint = function (repository){
 		
 		// releases
 		getReleasesForRepo(mRepos[i].name , 
-						function(){
+						function(data){
 							mReleases = [];  // store the issues in an array
-							json.forEach(x=> mReleases.push(x)); 
+							data.forEach(x=> mReleases.push(x)); 
 							// plot only whe all data is fetched
 							var myprogress = progress[repository.name];
 							progress.releases = true;
@@ -496,8 +524,27 @@ var fetchDataAndPaint = function (repository){
 								paintRepo(i);
 							}
 						});
+		// commits
+		// releases
+		getCommitsForRepo(mRepos[i].name , 
+						function(data){
+							mCommits = [];  // store the issues in an array
+							data.forEach(x=> mCommits.push(x)); 
+							// plot only whe all data is fetched
+							progress.commits = true;
+							// get an array from the object
+							var mp = Object.keys(progress).map(function (key) { return progress[key]; });
+							if ( mp.reduce((a,b) => a&&b) ) {
+								console.log(mRepos[i].name + " fetch mReleases launches paint");
+								// if all are true, we can plot
+								paintRepo(i);
+							}
+						});
 		
-		
+	}
+	if (repository.name == 'test') {
+		// recursive call
+		recursivePaint(i+1);
 	}
 }
 
@@ -507,6 +554,8 @@ var paintRepo = function (i) {
 	var thisrepo = mRepos[i];
 	$("#mymetrics").append("<tr id=\"#row_"+mRepos[i].name +"\"></tr>");
 	/*********************** issues ********************************/
+	/**
+	// Show all issues and not filter for open/close
 	var open = mIssues.filter(x=>x.state == 'open').length;
 	if (open > 0) {
 		var open = mIssues.filter(x=>x.state == 'open')
@@ -527,55 +576,64 @@ var paintRepo = function (i) {
 	} else {
 		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A</div></td>");
 	}
-	
-	
+	**/
+	var open = mIssues.length;
+	if (open > 0) {
+		var open = mIssues.filter(x=>Date.now() - Date.parse(x.updated_at) < NINETY_DAYS).length;
+					  //console.log("OPEN length" + open);
+		open = 100 * open / mIssues.length;
+		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor(-open, 'pull') + "\">"+ mIssues.filter(x=>Date.now() - Date.parse(x.updated_at) < NINETY_DAYS).length+"/" +mIssues.length + "%</div></td>");
+	} else { 
+		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A</div></td>"); 
+	}
 	/*********************** pulls ********************************/
 	
 	if (mPulls.length > 0) {
 		// sort in chrono order
 		mPulls.sort((a,b) => -(Date.parse(a['date']) - Date.parse(b['date'])));
 		
-		
+		/**
 		// get the amount of OPEN pulls that are NOT merged
 		var onm = mPulls.filter(x=> x.state == 'open' && x.merged_at == null);
 		// get the amount of OPEN pulls that are MERGED
 		var om = mPulls.filter(x=> x.state == 'open' && x.merged_at != null);
+		// add some info to screen
+		var perc = (100 * om.length / (om.length + onm.length));
+		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + ( perc) + "%</div> </td>");
+		
+		**/
 		
 		// get the amount of pulls that are NOT merged
 		var nm = mPulls.filter(x=> x.merged_at == null);
 		// get the amount of pulls that are MERGED
 		var m = mPulls.filter(x=> x.merged_at != null);
-		
 		// add some info to screen
-		var perc = (100 * om.length / (om.length + onm.length));
-		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + ( perc) + "%</div> </td>");
-		
 		perc = (100 * m.length / (nm.length + m.length));
-		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + (perc)+ " %</div></td>");
+		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" +nm.length + "/" + (m.length + nm.length) + " </div></td>");
 		
 		// filter the pulls in the last 3 months
 		//$("#issue_row").append("<p> In the last 3 months:");
 			
 		if (mPulls.filter(x=>(Date.now() - Date.parse(x.created_at)) < NINETY_DAYS).length > 0){
+			/**
 			var t_onm = onm.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
 			var t_om = om.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
-			
-			var t_nm = nm.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
-			var t_m = m.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
-			
 			perc = (100 * t_om.length / (t_om.length + t_onm.length));
 			$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + ( perc) + "%</div></td>");
-		
+			**/
+			var t_nm = nm.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+			var t_m = m.filter(x=> (Date.now() - Date.parse(x.created_at)) < NINETY_DAYS );
+					
 			perc = (100 * t_m.length / (t_nm.length + t_m.length));
-			$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" + (perc)+ "%</div></td>");
+			$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox " + getColor((-perc), 'pull') + "\">" +nm.length + "/" + (m.length + nm.length) + "</div></td>");
 		
 		} else {
-			$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+			//$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
 			$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
 		}
 	} else {
-		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
-		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		//$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
+		//$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
 		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");
 		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A<div></td>");	
 	}
@@ -590,7 +648,13 @@ var paintRepo = function (i) {
 	} else {
 		$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox grey\">N/A</div></td>");
 	}
-
+	/*********************** commits ********************************/
+	$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox "+(mCommits.length > 0 ? "green" : "red" )+"\">"+mCommits.length+"</div></td>");
+	// who's contributing to the code.
+	var contributors = new Set(mCommits.map(x=>x.commit.author.name ));
+	var asList = []; contributors.forEach(x=> asList.push(x));
+	var str = asList.reduce((a,b)=> a+", " + b);
+	$("#row_"+mRepos[i].name).append("<td><div class=\"colorbox "+(contributors.size > 1 ? "green" : "red" )+"\">"+contributors.size+"</div></td>");
 	// recursive call
 	recursivePaint(i+1);
 } 
